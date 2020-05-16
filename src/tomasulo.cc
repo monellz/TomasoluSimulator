@@ -1,4 +1,5 @@
 #include "tomasulo.h"
+#include <unistd.h>
 Tomasulo::Tomasulo(): ars("Ars"), mrs("Mrs"), load_buffer("LB"), add_fus("Add"), mult_fus("Mult"), load_fus("Load") {
     std::cout << "tomasulo init" << std::endl;
     for (int i = 0; i < REG_NUM; ++i) {
@@ -28,24 +29,23 @@ void Tomasulo::regs_show() {
 
 
 void Tomasulo::run(std::vector<nel::inst_t>& insts) {
-    std::cout << "in run" << std::endl;
     int inst_idx = 0;
     CycleCounter::get_instance().reset();
     Record::get_instance().reset(insts.size());
+    stall = false;
+    regs[PC].value = 0;
     while (true) {
         int cycle = ++CycleCounter::get_instance().counter;
 
+
         //write back from functional units
-        add_fus.write_back(this->regs);
-        mult_fus.write_back(this->regs);
-        load_fus.write_back(this->regs);
+        add_fus.write_back(this->regs, stall);
+        mult_fus.write_back(this->regs, stall);
+        load_fus.write_back(this->regs, stall);
 
+        int inst_idx = regs[PC].value;
 
-
-
-        std::cout << "write back done" << std::endl;
-
-        if (inst_idx < insts.size()) {
+        if (inst_idx < insts.size() && !stall) {
             //try issue
             
             //check reservation station status
@@ -73,7 +73,7 @@ void Tomasulo::run(std::vector<nel::inst_t>& insts) {
                         target->waiting_regs.push_back(write_reg);
                         regs[write_reg].status = target;
 
-                        inst_idx++;
+                        regs[PC].value++;
                     }
                     break;
                 }
@@ -100,14 +100,13 @@ void Tomasulo::run(std::vector<nel::inst_t>& insts) {
                         target->waiting_regs.push_back(write_reg);
                         regs[write_reg].status = target;
 
-                        inst_idx++;
+                        regs[PC].value++;
                     }
                     break;
                 }
                 case nel::Load: {
                     int addr = insts[inst_idx].ints[0];
                     int write_reg = insts[inst_idx].regs[0];
-                    printf("load for reg %d\n", write_reg);
                     ReservationStation* target = load_buffer.push(inst_idx, addr, write_reg);
                     if (target != nullptr) {
                         //issue secc
@@ -115,13 +114,34 @@ void Tomasulo::run(std::vector<nel::inst_t>& insts) {
                         target->waiting_regs.push_back(write_reg);
                         regs[write_reg].status = target;
 
-                        inst_idx++;
+                        regs[PC].value++;
                     }
                     break;
                 }
                 case nel::Jump: {
-                    printf("not implement for jump\n");
-                    return;
+                    ReservationStation* q0 = regs[insts[inst_idx].regs[0]].status;
+                    ReservationStation* q1 = nullptr;
+                    int v0 = regs[insts[inst_idx].regs[0]].value;
+                    int v1 = insts[inst_idx].ints[0];
+                    int write_reg = PC;
+                    int offset = insts[inst_idx].ints[1];
+
+                    ReservationStation* target = ars.push(insts[inst_idx].opr, inst_idx, v0, v1, q0, q1, offset);
+                    stall = true;
+                    if (target != nullptr) {
+                        //issue succ
+                        Record::get_instance().update_issue(inst_idx, cycle);
+
+                        //add it to the waiting queue of rs
+                        if (q0 != nullptr) {
+                            q0->waiting_rs.push_back(target);
+                        }
+                        target->waiting_regs.push_back(write_reg);
+                        regs[write_reg].status = target;
+
+                        regs[PC].value++;
+                    }
+                    break;
                 }
                 default: {
                     printf("unknown inst type: %d", insts[inst_idx].opr);
@@ -134,27 +154,27 @@ void Tomasulo::run(std::vector<nel::inst_t>& insts) {
         ReservationStation* target = nullptr;
         int result = 0;
         int left_cycle = 0;
-        int inst_idx = 0;
-        target = ars.select_task(inst_idx, result, left_cycle);
+        int target_inst_idx = 0;
+        target = ars.select_task(target_inst_idx, result, left_cycle);
         if (target != nullptr) {
-            add_fus.push(target, inst_idx, left_cycle, result);
+            add_fus.push(target, target_inst_idx, left_cycle, result);
         }
 
-        target = mrs.select_task(inst_idx, result, left_cycle);
+        target = mrs.select_task(target_inst_idx, result, left_cycle);
         if (target != nullptr) {
-            mult_fus.push(target, inst_idx, left_cycle, result);
+            mult_fus.push(target, target_inst_idx, left_cycle, result);
         }
 
-        target = load_buffer.select_task(inst_idx, result, left_cycle);
+        target = load_buffer.select_task(target_inst_idx, result, left_cycle);
         if (target != nullptr) {
-            load_fus.push(target, inst_idx, left_cycle, result);
+            load_fus.push(target, target_inst_idx, left_cycle, result);
         }
 
 
         add_fus.update();
         mult_fus.update();
         load_fus.update();
-        
+
         //print 
         printf("---------------log start---cycle: %d--------------\n", cycle);
         ars.show();
@@ -166,10 +186,11 @@ void Tomasulo::run(std::vector<nel::inst_t>& insts) {
         load_fus.show();
         printf("---------------log done---------------------------\n");
 
-
         //check fus
         bool done = add_fus.empty() && mult_fus.empty() && load_fus.empty();
         if (done) break;
+
+        //sleep(1);
     }
 
 

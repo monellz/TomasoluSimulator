@@ -65,7 +65,7 @@ public:
         }
         return false;
     }
-    void write_back(reg_t regs[]) {
+    void write_back(reg_t regs[], bool& stall) {
         //check left_cycle
         for (int i = 0; i < NUM; ++i) {
             if (units[i].executing != nullptr && units[i].left_cycle == 0) {
@@ -76,9 +76,21 @@ public:
                 //update all regs
                 for (int j = 0; j < executing->waiting_regs.size(); ++j) {
                     int reg_idx = executing->waiting_regs[j];
-                    if (regs[reg_idx].status == executing) {
-                        regs[reg_idx].status = nullptr;
-                        regs[reg_idx].value = units[i].result;
+                    if (reg_idx == PC && regs[PC].status == executing) {
+                        //must be jump
+                        regs[PC].status = nullptr;
+                        OpStation* rs = static_cast<OpStation*>(executing);
+                        if (rs->v[0] == rs->v[1]) {
+                            //jump
+                            regs[PC].value = rs->inst_idx + rs->offset;
+                        }
+
+                        stall = false;
+                    } else {
+                        if (regs[reg_idx].status == executing) {
+                            regs[reg_idx].status = nullptr;
+                            regs[reg_idx].value = units[i].result;
+                        }
                     }
                 }
                 executing->waiting_regs.clear();

@@ -12,6 +12,7 @@ public:
     nel::op_t op;
     int inst_idx;
     int v[2];
+    int offset;
     ReservationStation* q[2];
 
     OpStation();
@@ -65,7 +66,7 @@ public:
                 target = &bufs[i];
                 result = bufs[i].addr;
                 inst_idx = bufs[i].inst_idx;
-                left_cycle = LOAD_CYCLE;
+                left_cycle = LOAD_CYCLE + 1;
             }
         }
         return target;
@@ -113,7 +114,7 @@ public:
         }
     }
 
-    ReservationStation* push(nel::op_t op, int inst_idx, int v0, int v1, ReservationStation* q0, ReservationStation* q1) {
+    ReservationStation* push(nel::op_t op, int inst_idx, int v0, int v1, ReservationStation* q0, ReservationStation* q1, int offset = 0) {
         for (int i = 0; i < NUM; ++i) {
             if (!ops[i].busy) {
                 ops[i].busy = true;
@@ -123,6 +124,7 @@ public:
                 ops[i].v[1] = v1;
                 ops[i].q[0] = q0;
                 ops[i].q[1] = q1;
+                ops[i].offset = offset;
                 if (q0 == nullptr && q1 == nullptr) {
                     ops[i].ready = CycleCounter::get_instance().counter;
                 } else {
@@ -147,31 +149,31 @@ public:
                     switch (ops[i].op) {
                         case nel::Add: {
                             result = ops[i].v[0] + ops[i].v[1];
-                            left_cycle = ADD_CYCLE;
+                            left_cycle = ADD_CYCLE + 1;
                             break;
                         }
                         case nel::Sub: {
                             result = ops[i].v[0] - ops[i].v[1];
-                            left_cycle = SUB_CYCLE;
+                            left_cycle = SUB_CYCLE + 1;
                             break;
                         }
                         case nel::Mul: {
                             result = ops[i].v[0] * ops[i].v[1];
-                            left_cycle = MUL_CYCLE;
+                            left_cycle = MUL_CYCLE + 1;
                             break;
                         }
                         case nel::Div: {
                             if (ops[i].v[1] == 0) {
                                 result = ops[i].v[0];
-                                left_cycle = DIV_ZERO_CYCLE;
+                                left_cycle = DIV_ZERO_CYCLE + 1;
                             } else {
                                 result = ops[i].v[0] / ops[i].v[1];
-                                left_cycle = DIV_CYCLE;
+                                left_cycle = DIV_CYCLE + 1;
                             }
                             break;
                         }
                         case nel::Jump: {
-                            printf("Jump not support now\n");
+                            left_cycle = JUMP_CYCLE + 1;
                             break;
                         }
                         default: {

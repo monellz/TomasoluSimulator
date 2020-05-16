@@ -8,7 +8,7 @@ int main(int argc, char** argv) {
     Parser parser;
     std::vector<nel::inst_t> insts;
     
-    parser.parse("TestCase/4.basic.nel", insts);
+    parser.parse("TestCase/Example.nel", insts);
     printf("parse done, insts.len = %lu\n", insts.size());
 
     Tomasulo tmsl;

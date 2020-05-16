@@ -32,7 +32,8 @@ public:
     Mrs_t mrs;
     Loadbuffer_t load_buffer;
 
-    reg_t regs[REG_NUM];
+    reg_t regs[REG_NUM + 1];
+    bool stall;
 
     AddFUs_t add_fus;
     MultFUs_t mult_fus;

@@ -3,6 +3,8 @@
 
 #include "station.h"
 
+#define PC 32
+
 struct reg_t {
     ReservationStation* status;
     int value;
