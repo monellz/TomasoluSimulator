@@ -8,7 +8,7 @@ all: simulator
 
 simulator: ${OBJ} ${HEADERS}
 	g++ $^ -o $@ ${CXX_FLAGS}
-%.o: %.cc
+%.o: %.cc %{HEADERS}
 	g++ -c $^ -o $@ ${CXX_FLAGS}
 
 

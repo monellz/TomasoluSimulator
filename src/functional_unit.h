@@ -3,19 +3,27 @@
 
 #include "reg.h"
 #include "station.h"
+#include "record.h"
 
 struct FunctionalUnit {
+    std::string name;
     ReservationStation* executing;
     int left_cycle;
     int result;
+    int inst_idx;
 };
 
 template<unsigned NUM>
 class FUs {
 public:
     FunctionalUnit units[NUM];
+    int working_fu;
 
-    FUs() {
+    FUs(const std::string& prefix) {
+        working_fu = 0;
+        for (int i = 0; i < NUM; ++i) {
+            units[i].name = prefix + std::to_string(i);
+        }
         reset();
     }
 
@@ -27,12 +35,31 @@ public:
         }
     }
 
-    bool push(ReservationStation* task, int left_cycle, int result) {
+    inline bool empty() {
+        return working_fu == 0;
+    }
+
+    void show() {
+        printf("Functinal Units:\n");
+        printf("\t\tRS\tleft cycle\n");
+        for (int i = 0; i < NUM; ++i) {
+            printf("\t%s:", units[i].name.c_str());
+            if (units[i].executing != nullptr) printf("\t%s", units[i].executing->get_name().c_str());
+            else printf("\t ");
+            printf("\t%d\n", units[i].left_cycle);
+        }
+    }
+
+    bool push(ReservationStation* task, int inst_idx, int left_cycle, int result) {
         for (int i = 0; i < NUM; ++i) {
             if (units[i].executing == nullptr) {
                 units[i].executing = task;
                 units[i].left_cycle = left_cycle;
                 units[i].result = result;
+                units[i].inst_idx = inst_idx;
+                working_fu++;
+
+                task->exec_start();
                 return true;
             }
         }
@@ -41,10 +68,10 @@ public:
     void write_back(reg_t regs[]) {
         //check left_cycle
         for (int i = 0; i < NUM; ++i) {
-            if (units[i].left_cycle == 0) {
-                assert(units[i].executing != nullptr);
+            if (units[i].executing != nullptr && units[i].left_cycle == 0) {
                 ReservationStation* executing = units[i].executing;
                 //write back
+                Record::get_instance().update_write(units[i].inst_idx, CycleCounter::get_instance().counter);
 
                 //update all regs
                 for (int j = 0; j < executing->waiting_regs.size(); ++j) {
@@ -63,9 +90,18 @@ public:
                 }
                 executing->waiting_rs.clear();
 
+                executing->reset();
                 units[i].executing = nullptr;
-            } else {
-                units[i].left_cycle -= 1;
+                working_fu--;
+            }
+        }
+    }
+
+    void update() {
+        for (int i = 0; i < NUM; ++i) {
+            units[i].left_cycle -= 1;
+            if (units[i].left_cycle == 0) {
+                Record::get_instance().update_exec(units[i].inst_idx, CycleCounter::get_instance().counter);
             }
         }
     }

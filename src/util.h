@@ -2,5 +2,6 @@
 #define __UTIL_H
 
 #include <assert.h>
+#include <iostream>
 
 #endif

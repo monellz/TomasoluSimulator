@@ -11,12 +11,17 @@ public:
     //rs which wait for the result of this rs
     std::vector<ReservationStation*> waiting_rs;
     std::vector<int> waiting_regs;
+    bool exec;
     std::string get_name() {
         return name;
     }
 
-    std::string set_name(const std::string& n) {
+    void set_name(const std::string& n) {
         name = n;
+    }
+
+    inline void exec_start() {
+        exec = true;
     }
 
     virtual void get_result_from(ReservationStation* rs, int result) = 0;

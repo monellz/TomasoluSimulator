@@ -7,6 +7,7 @@
 #include "station.h"
 #include "functional_unit.h"
 #include "reg.h"
+#include "record.h"
 
 #define MRS_NUM 3
 #define ARS_NUM 6
@@ -16,23 +17,20 @@
 #define MULTI_NUM 2
 #define LOAD_NUM 2
 
-#define LOAD_CYCLE 3
-#define JUMP_CYCLE 1
-#define ADD_CYCLE 3
-#define SUB_CYCLE 3
-#define MUL_CYCLE 4
-#define DIV_CYCLE 4
-#define DIV_ZERO_CYCLE 1
-
 class Tomasulo {
 public:
     typedef FUs<ADD_NUM> AddFUs_t;
     typedef FUs<MULTI_NUM> MultFUs_t;
     typedef FUs<LOAD_NUM> LoadFUs_t;
 
-    OpStation ars[ARS_NUM]; 
-    OpStation mrs[MRS_NUM];
-    LoadBuffer load_buffer[LOADBUFF_NUM];
+    typedef OpStations<ARS_NUM> Ars_t;
+    typedef OpStations<MRS_NUM> Mrs_t;
+    typedef LoadBuffers<LOADBUFF_NUM> Loadbuffer_t;
+
+
+    Ars_t ars; 
+    Mrs_t mrs;
+    Loadbuffer_t load_buffer;
 
     reg_t regs[REG_NUM];
 
@@ -41,6 +39,7 @@ public:
     LoadFUs_t load_fus;
 
     Tomasulo();
+    void regs_show();
     void run(std::vector<nel::inst_t>& insts);
     void reset();
 };

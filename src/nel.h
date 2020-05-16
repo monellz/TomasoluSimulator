@@ -4,24 +4,34 @@
 #include <cstdio>
 #include "util.h"
 
+#define LOAD_CYCLE 3
+#define JUMP_CYCLE 1
+#define ADD_CYCLE 3
+#define SUB_CYCLE 3
+#define MUL_CYCLE 4
+#define DIV_CYCLE 4
+#define DIV_ZERO_CYCLE 1
+
 namespace nel {
 
 enum op_t {
-    Add,    // regs[0] regs[1] regs[2]
-    Mul,    // regs[0] regs[1] regs[2]
-    Sub,    // regs[0] regs[1] regs[2]
-    Div,    // regs[0] regs[1] regs[2]
-    Load,   // regs[0] ints[0]
-    Jump    // ints[0] regs[0] ints[1]
+    None = 0,
+    Add = 1,    // regs[0] regs[1] regs[2]
+    Mul = 2,    // regs[0] regs[1] regs[2]
+    Sub = 3,    // regs[0] regs[1] regs[2]
+    Div = 4,    // regs[0] regs[1] regs[2]
+    Load = 5,   // regs[0] ints[0]
+    Jump = 6    // ints[0] regs[0] ints[1]
+};
+
+const char op_name[][5] = {
+    "none", "add", "mul", "sub", "div", "load", "jump"
 };
 
 struct inst_t {
     op_t opr; 
     int regs[3];
     int ints[2];
-
-    int inst_idx;
-    
     void show() {
         switch (opr) {
             case Add: {

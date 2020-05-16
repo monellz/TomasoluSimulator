@@ -26,6 +26,10 @@ void OpStation::reset() {
     busy = false;
     ready = -1;
     q[0] = q[1] = nullptr;
+    inst_idx = -1;
+    v[0] = v[1] = 0;
+    op = nel::None;
+    exec = false;
 }
 
 LoadBuffer::LoadBuffer() {
@@ -39,4 +43,8 @@ void LoadBuffer::get_result_from(ReservationStation* rs, int result) {
 void LoadBuffer::reset() {
     busy = false; 
     addr = 0;
+    exec = false;
+    ready = -1;
+    reg = -1;
+    inst_idx = -1;
 }
