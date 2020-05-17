@@ -46,7 +46,7 @@ void Tomasulo::reset(int inst_num) {
     rob.reset();
 }
 
-void Tomasulo::run_bp(std::vector<nel::inst_t>& insts) {
+void Tomasulo::run_bp(std::vector<nel::inst_t>& insts, int print_cycle) {
     reset(insts.size());
 
     //TODO: start clock
@@ -210,19 +210,20 @@ void Tomasulo::run_bp(std::vector<nel::inst_t>& insts) {
         int left_cycle = 0;
         int target_inst_idx = 0;
         rob_iter it;
-        target = ars.select_task(target_inst_idx, result, left_cycle, it);
-        if (target != nullptr) {
-            add_fus.push_bp(target, target_inst_idx, left_cycle, result, it);
+        while ((target = ars.select_task(target_inst_idx, result, left_cycle, it)) != nullptr) {
+            if (add_fus.full()) break;
+            bool ret = add_fus.push(target, target_inst_idx, left_cycle, result);
+            assert(ret);
         }
-
-        target = mrs.select_task(target_inst_idx, result, left_cycle, it);
-        if (target != nullptr) {
-            mult_fus.push_bp(target, target_inst_idx, left_cycle, result, it);
+        while ((target = mrs.select_task(target_inst_idx, result, left_cycle, it)) != nullptr) {
+            if (mult_fus.full()) break;
+            bool ret = mult_fus.push(target, target_inst_idx, left_cycle, result);
+            assert(ret);
         }
-
-        target = load_buffer.select_task(target_inst_idx, result, left_cycle, it);
-        if (target != nullptr) {
-            load_fus.push_bp(target, target_inst_idx, left_cycle, result, it);
+        while ((target = load_buffer.select_task(target_inst_idx, result, left_cycle, it)) != nullptr) {
+            if (load_fus.full()) break;
+            bool ret = load_fus.push(target, target_inst_idx, left_cycle, result);
+            assert(ret);
         }
 
 
@@ -231,17 +232,19 @@ void Tomasulo::run_bp(std::vector<nel::inst_t>& insts) {
         load_fus.update();
 
         //print 
-        printf("---------------log start---cycle: %d--------------\n", cycle);
-        ars.show();
-        mrs.show();
-        load_buffer.show();
-        regs_show();
-        add_fus.show();
-        mult_fus.show();
-        load_fus.show();
-        rob.show();
-        btb.show();
-        printf("---------------log done---------------------------\n");
+        if (print_cycle == cycle) {
+            printf("---------------log start---cycle: %d--------------\n", cycle);
+            ars.show();
+            mrs.show();
+            load_buffer.show();
+            regs_show();
+            add_fus.show();
+            mult_fus.show();
+            load_fus.show();
+            rob.show();
+            btb.show();
+            printf("---------------log done---------------------------\n");
+        }
 
         //check fus
         bool done = add_fus.empty() && mult_fus.empty() && load_fus.empty();
@@ -255,7 +258,7 @@ void Tomasulo::run_bp(std::vector<nel::inst_t>& insts) {
 }
 
 
-void Tomasulo::run(std::vector<nel::inst_t>& insts) {
+void Tomasulo::run(std::vector<nel::inst_t>& insts, int print_cycle) {
     reset(insts.size());
 
     while (true) {
@@ -380,42 +383,42 @@ void Tomasulo::run(std::vector<nel::inst_t>& insts) {
         int left_cycle = 0;
         int target_inst_idx = 0;
         rob_iter it;
-        target = ars.select_task(target_inst_idx, result, left_cycle, it);
-        if (target != nullptr) {
-            add_fus.push(target, target_inst_idx, left_cycle, result);
+        while ((target = ars.select_task(target_inst_idx, result, left_cycle, it)) != nullptr) {
+            if (add_fus.full()) break;
+            bool ret = add_fus.push(target, target_inst_idx, left_cycle, result);
+            assert(ret);
         }
-
-        target = mrs.select_task(target_inst_idx, result, left_cycle, it);
-        if (target != nullptr) {
-            mult_fus.push(target, target_inst_idx, left_cycle, result);
+        while ((target = mrs.select_task(target_inst_idx, result, left_cycle, it)) != nullptr) {
+            if (mult_fus.full()) break;
+            bool ret = mult_fus.push(target, target_inst_idx, left_cycle, result);
+            assert(ret);
         }
-
-        target = load_buffer.select_task(target_inst_idx, result, left_cycle, it);
-        if (target != nullptr) {
-            load_fus.push(target, target_inst_idx, left_cycle, result);
+        while ((target = load_buffer.select_task(target_inst_idx, result, left_cycle, it)) != nullptr) {
+            if (load_fus.full()) break;
+            bool ret = load_fus.push(target, target_inst_idx, left_cycle, result);
+            assert(ret);
         }
-
 
         add_fus.update();
         mult_fus.update();
         load_fus.update();
 
         //print 
-        printf("---------------log start---cycle: %d--------------\n", cycle);
-        ars.show();
-        mrs.show();
-        load_buffer.show();
-        regs_show();
-        add_fus.show();
-        mult_fus.show();
-        load_fus.show();
-        printf("---------------log done---------------------------\n");
+        //if (print_cycle == cycle) {
+            printf("---------------log start---cycle: %d--------------\n", cycle);
+            ars.show();
+            mrs.show();
+            load_buffer.show();
+            regs_show();
+            add_fus.show();
+            mult_fus.show();
+            load_fus.show();
+            printf("---------------log done---------------------------\n");
+        //}
 
         //check fus
         bool done = add_fus.empty() && mult_fus.empty() && load_fus.empty();
         if (done) break;
-
-        //sleep(1);
     }
 
 

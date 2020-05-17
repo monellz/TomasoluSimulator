@@ -42,6 +42,10 @@ public:
         return working_fu == 0;
     }
 
+    inline bool full() {
+        return working_fu == NUM;
+    }
+
     void show() {
         printf("Functinal Units(working: %d):\n", working_fu);
         printf("\t\t\tRS  \tLeftCycle\n");

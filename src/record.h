@@ -1,8 +1,9 @@
 #ifndef __RECORD_H
 #define __RECORD_H
 
-#include "nel.h"
 #include <vector>
+#include <sys/time.h>
+#include "nel.h"
 
 class Record {
 private:
@@ -13,13 +14,27 @@ private:
     Record& operator=(const Record&) = delete;
 public:
     std::vector<nel::inst_status_t> inst_status;
+    double start, end;
     static Record& get_instance() {
         return instance;
     }
 
     void reset(int size) {
+        start = end = 0.0;
         inst_status.clear();
         inst_status.resize(size);
+    }
+
+    void start_clock() {
+        struct timeval tv;
+        gettimeofday(&tv, NULL);
+        start = tv.tv_sec * 1000.0 + tv.tv_usec / 1000.0;
+    }
+
+    void end_clock() {
+        struct timeval tv;
+        gettimeofday(&tv, NULL);
+        end = tv.tv_sec * 1000.0 + tv.tv_usec / 1000.0;
     }
 
     void update_issue(int idx, int cycle) {
@@ -45,6 +60,10 @@ public:
         for (int i = 0; i < inst_status.size(); ++i) {
             printf("\t%d:\t%8d\t%8d\t%8d\n", i, inst_status[i].issue, inst_status[i].exec_comp, inst_status[i].write_result);
         }
+    }
+
+    void show_time() {
+        printf("Simulation Time: %lf ms\n", end - start);
     }
 };
 

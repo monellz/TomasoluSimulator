@@ -23,12 +23,12 @@ void OpStation::get_result_from(ReservationStation* rs, int result) {
 
 void OpStation::reset() {
     busy = false;
+    exec = false;
     ready = -1;
     q[0] = q[1] = nullptr;
     inst_idx = -1;
     v[0] = v[1] = 0;
     op = nel::None;
-    exec = false;
     waiting_reg = -1;
     waiting_rs.clear();
 }

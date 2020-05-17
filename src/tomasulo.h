@@ -44,8 +44,8 @@ public:
 
     Tomasulo();
     void regs_show();
-    void run(std::vector<nel::inst_t>& insts);
-    void run_bp(std::vector<nel::inst_t>& insts);
+    void run(std::vector<nel::inst_t>& insts, int print_cycle);
+    void run_bp(std::vector<nel::inst_t>& insts, int print_cycle);
     void reset(int inst_num = 0);
 };
 

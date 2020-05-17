@@ -130,7 +130,7 @@ public:
 
     void show() {
         printf("OpStations:\n");
-        printf("\t\t\tBusy\tOp  \t\tVj  \t\tVk  \tQj  \tQk  \n");
+        printf("\t\t\tBusy\tOp  \t\tVj  \t\tVk  \tQj  \tQk  \tInst\n");
         for (int i = 0; i < NUM; ++i) {
             printf("\t%s:", ops[i].get_name().c_str());
             if (ops[i].busy) printf("\tYes ");
@@ -147,7 +147,10 @@ public:
             printf("\t%4s", rs.c_str());
             rs = "";
             if (ops[i].q[1] != nullptr) rs = ops[i].q[1]->get_name();
-            printf("\t%4s\n", rs.c_str());
+            printf("\t%4s", rs.c_str());
+
+            printf("\t%4d", ops[i].inst_idx);
+            printf("\n");
         }
     }
 
@@ -205,7 +208,7 @@ public:
         int min_inst_idx = INT32_MAX;
         ReservationStation* target = nullptr;
         for (int i = 0; i < NUM; ++i) {
-            if (ops[i].ready != -1 && !ops[i].exec) {
+            if (ops[i].busy && ops[i].ready != -1 && !ops[i].exec) {
                 if (ops[i].ready < min_ready || (ops[i].ready == min_ready && ops[i].inst_idx < min_inst_idx)) {
                     target = &ops[i];
                     inst_idx = ops[i].inst_idx;
