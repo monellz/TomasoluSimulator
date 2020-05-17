@@ -12,7 +12,8 @@ int main(int argc, char** argv) {
     printf("parse done, insts.len = %lu\n", insts.size());
 
     Tomasulo tmsl;
-    tmsl.run(insts);
+    tmsl.run_bp(insts);
+    //tmsl.run(insts);
 
     return 0;
 }

@@ -8,11 +8,12 @@
 #include "functional_unit.h"
 #include "reg.h"
 #include "record.h"
+#include "reorder_buffer.h"
+#include "branch_target_buffer.h"
 
 #define MRS_NUM 3
 #define ARS_NUM 6
 #define LOADBUFF_NUM 3
-#define REG_NUM 32
 #define ADD_NUM 3
 #define MULTI_NUM 2
 #define LOAD_NUM 2
@@ -27,12 +28,14 @@ public:
     typedef OpStations<MRS_NUM> Mrs_t;
     typedef LoadBuffers<LOADBUFF_NUM> Loadbuffer_t;
 
+    ROB rob;
+    BTB btb;
 
     Ars_t ars; 
     Mrs_t mrs;
     Loadbuffer_t load_buffer;
 
-    reg_t regs[REG_NUM + 1];
+    reg_t regs[REG_NUM];
     bool stall;
 
     AddFUs_t add_fus;
@@ -42,7 +45,8 @@ public:
     Tomasulo();
     void regs_show();
     void run(std::vector<nel::inst_t>& insts);
-    void reset();
+    void run_bp(std::vector<nel::inst_t>& insts);
+    void reset(int inst_num = 0);
 };
 
 #endif

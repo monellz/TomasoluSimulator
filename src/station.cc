@@ -17,7 +17,6 @@ void OpStation::get_result_from(ReservationStation* rs, int result) {
     
     if (q[0] == nullptr && q[1] == nullptr) ready = CycleCounter::get_instance().counter;
     else {
-        printf("should not rewrite ready = -1\n");
         ready = -1;
     }
 }
@@ -30,6 +29,8 @@ void OpStation::reset() {
     v[0] = v[1] = 0;
     op = nel::None;
     exec = false;
+    waiting_reg = -1;
+    waiting_rs.clear();
 }
 
 LoadBuffer::LoadBuffer() {
@@ -47,4 +48,6 @@ void LoadBuffer::reset() {
     ready = -1;
     reg = -1;
     inst_idx = -1;
+    waiting_reg = -1;
+    waiting_rs.clear();
 }
