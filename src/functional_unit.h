@@ -44,12 +44,11 @@ public:
 
     void show() {
         printf("Functinal Units(working: %d):\n", working_fu);
-        printf("\t\tRS\tleft cycle\n");
+        printf("\t\t\tRS  \tLeftCycle\n");
         for (int i = 0; i < NUM; ++i) {
             printf("\t%s:", units[i].name.c_str());
-            if (units[i].executing != nullptr) printf("\t%s", units[i].executing->get_name().c_str());
-            else printf("\t ");
-            printf("\t%d\n", units[i].left_cycle);
+            if (units[i].executing != nullptr) printf("\t%4s\t%d\n", units[i].executing->get_name().c_str(), units[i].left_cycle);
+            else printf("\n");
         }
     }
 

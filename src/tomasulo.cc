@@ -9,23 +9,19 @@ void Tomasulo::regs_show() {
     for (int reg_start = 0; reg_start < 32; reg_start += 8) {
         printf("\t");
         for (int i = reg_start; i < reg_start + 8; ++i) {
-            printf("\tR%d", i);
-        }
-        printf("\n\tstatus");
-        for (int i = reg_start; i < reg_start + 8; ++i) {
             if (regs[i].status != nullptr) {
-                printf("\t%x/%s", regs[i].value, regs[i].status->get_name().c_str());
+                printf("(R%d)%x/%s\t", i, regs[i].value, regs[i].status->get_name().c_str());
             } else {
-                printf("\t%x", regs[i].value);
+                printf("(R%d)%x\t", i, regs[i].value);
             }
         }
         printf("\n");
     }
     //pc
     if (regs[PC].status != nullptr) {
-        printf("\t\tR32(PC): %x/%s\n", regs[PC].value, regs[PC].status->get_name().c_str());
+        printf("\t(R32, PC): %x/%s\n", regs[PC].value, regs[PC].status->get_name().c_str());
     } else {
-        printf("\t\tR32(PC): %x\n", regs[PC].value);
+        printf("\t(R32, PC): %x\n", regs[PC].value);
     }
 }
 

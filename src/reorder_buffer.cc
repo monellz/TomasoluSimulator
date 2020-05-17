@@ -10,20 +10,19 @@ void ROB::reset() {
 
 void ROB::show() {
     printf("ReorderBuffer size(%lu):\n", buf.size());
-    printf("\t\tOp\tWReg\tReady\tResult\tPResult\t\tRS\tInst\n");
+    printf("\tOp  \tWReg\tReady\tResult\tPResult\tRS\n");
     for (auto it = buf.begin(); it != buf.end(); ++it) {
-        printf("\t\t%s", nel::op_name[it->op]);
-        printf("\tR%d", it->write_reg);
-        if (it->ready) printf("\tYes");
-        else printf("\tNo");
-        printf("\t%d", it->result);
+        printf("\t%4s", nel::op_name[it->op]);
+        printf("\tR%-3d", it->write_reg);
+        if (it->ready) printf("\tYes ");
+        else printf("\tNo  ");
+        printf("\t%-4d", it->result);
         if (it->op == nel::Jump) {
-            printf("\t%d", it->predict_result);
+            printf("\t%-4d", it->predict_result);
         } else {
-            printf("\t?");
+            printf("\t?   ");
         }
-        printf("\t\t%s", it->rs->get_name().c_str());
-        printf("\t%d\n", it->rs->inst_idx);
+        printf("\t%s\n", it->rs->get_name().c_str());
     }
 }
 

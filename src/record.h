@@ -41,9 +41,9 @@ public:
 
     void show_inst_status() {
         printf("Instruction status:\n");
-        printf("\t\tIssue\tExecComp\tWriteResult\n");
+        printf("\t\t%8s\t%8s\t%s\n", "Issue", "ExecComp", "WriteResult");
         for (int i = 0; i < inst_status.size(); ++i) {
-            printf("\t%d:\t%d\t%d\t\t%d\n", i, inst_status[i].issue, inst_status[i].exec_comp, inst_status[i].write_result);
+            printf("\t%d:\t%8d\t%8d\t%8d\n", i, inst_status[i].issue, inst_status[i].exec_comp, inst_status[i].write_result);
         }
     }
 };

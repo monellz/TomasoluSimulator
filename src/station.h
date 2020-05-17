@@ -101,12 +101,12 @@ public:
 
     void show() {
         printf("Load Buffer:\n");
-        printf("\t\tBusy\tAddress\n");
+        printf("\t\t\t%4s\t%8s\n", "Busy", "Addr");
         for (int i = 0; i < NUM; ++i) {
-            printf("\t%s:", bufs[i].get_name().c_str());
-            if (bufs[i].busy) printf("\tYes");
-            else printf("\tNo");
-            printf("\t%x\n", bufs[i].addr);
+            printf("\t%3s:", bufs[i].get_name().c_str());
+            if (bufs[i].busy) printf("\t%4s", "Yes");
+            else printf("\t%4s", "No");
+            printf("\t%8x\n", bufs[i].addr);
         }
     }
 };
@@ -130,21 +130,24 @@ public:
 
     void show() {
         printf("OpStations:\n");
-        printf("\t\tBusy\tOp\tVj\tVk\tQj\tQk\n");
+        printf("\t\t\tBusy\tOp  \t\tVj  \t\tVk  \tQj  \tQk  \n");
         for (int i = 0; i < NUM; ++i) {
             printf("\t%s:", ops[i].get_name().c_str());
-            if (ops[i].busy) printf("\tYes");
-            else printf("\tNo");
-            printf("\t%s", nel::op_name[ops[i].op]);
-            printf("\t%x", ops[i].v[0]);
-            printf("\t%x", ops[i].v[1]);
+            if (ops[i].busy) printf("\tYes ");
+            else printf("\tNo  ");
+            printf("\t%4s", nel::op_name[ops[i].op]);
+
+            if (ops[i].q[0] == nullptr) printf("\t%8x", ops[i].v[0]);
+            else printf("\t%8s", "?");
+            if (ops[i].q[1] == nullptr) printf("\t%8x", ops[i].v[1]);
+            else printf("\t%8s", "?");
             std::string rs;
-            rs = " ";
-            if (ops[i].q[0] != nullptr) rs = ops[i].q[0]->get_name().c_str();
-            printf("\t%s", rs.c_str());
-            rs = " ";
-            if (ops[i].q[1] != nullptr) rs = ops[i].q[1]->get_name().c_str();
-            printf("\t%s\n", rs.c_str());
+            rs = "";
+            if (ops[i].q[0] != nullptr) rs = ops[i].q[0]->get_name();
+            printf("\t%4s", rs.c_str());
+            rs = "";
+            if (ops[i].q[1] != nullptr) rs = ops[i].q[1]->get_name();
+            printf("\t%4s\n", rs.c_str());
         }
     }
 

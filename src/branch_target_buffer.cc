@@ -49,11 +49,11 @@ void BTB::branch_fail(int inst_idx) {
 
 void BTB::show() {
     printf("BranchTargetBuffer:\n");
-    printf("\t\tInst\tAddr\tTable\n");
+    printf("\t\t%8s\t%8s\t%8s\n", "Inst", "Addr", "Table");
     for (int i = 0; i < buf.size(); ++i) {
         int inst_idx = buf[i].inst_idx;
         int addr = buf[i].bht.get_addr();
         unsigned int table = buf[i].bht.get_table();
-        printf("\t\t%d\t%d\t%u\n", inst_idx, addr, table);
+        printf("\t\t%8d\t%8x\t%8u\n", inst_idx, addr, table);
     }
 }
