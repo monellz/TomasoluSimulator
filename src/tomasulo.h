@@ -37,6 +37,7 @@ public:
 
     reg_t regs[REG_NUM];
     bool stall;
+    bool stall_disable;
 
     AddFUs_t add_fus;
     MultFUs_t mult_fus;

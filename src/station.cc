@@ -29,6 +29,7 @@ void OpStation::reset() {
     inst_idx = -1;
     v[0] = v[1] = 0;
     op = nel::None;
+    offset = 0;
     waiting_reg = -1;
     waiting_rs.clear();
 }

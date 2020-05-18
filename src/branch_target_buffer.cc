@@ -17,7 +17,7 @@ int BTB::predict(int inst_idx) {
     }
 
     //not match
-    printf("info: predict not match for inst: %d, insert\n", inst_idx);
+    //printf("info: predict not match for inst: %d, insert\n", inst_idx);
     BTBLine line;
     line.inst_idx = inst_idx;
     int predict_addr = line.bht.predict();

@@ -90,20 +90,27 @@ public:
         }
         return false;
     }
-    void write_back_bp(reg_t regs[], BTB& btb) {
+    void write_back_bp(reg_t regs[], BTB& btb, ROB& rob) {
          //check left_cycle
         for (int i = 0; i < NUM; ++i) {
             if (units[i].executing != nullptr && units[i].left_cycle == 0) {
                 ReservationStation* executing = units[i].executing;
+                assert(executing != nullptr);
                 //write back
                 Record::get_instance().update_write(units[i].inst_idx, CycleCounter::get_instance().counter);
 
                 //update reg
                 int reg_idx = executing->waiting_reg;
-                if (reg_idx >= 0 && executing->waiting_reg < REG_NUM) {
+                assert(reg_idx >= 0 && reg_idx < REG_NUM);
+                if (reg_idx >= 0 && reg_idx < REG_NUM) {
                     if (reg_idx == PC) {
                         //must be jump instruction
 
+                        if (regs[reg_idx].status == executing) {
+                            regs[reg_idx].status = nullptr;
+                        }
+
+                        //OpStation* rs = static_cast<OpStation*>(executing);
                         OpStation* rs = static_cast<OpStation*>(executing);
                         if (rs->v[0] == rs->v[1]) {
                             //jump succ
@@ -112,7 +119,6 @@ public:
                             //write result into rob
                             units[i].it->ready = true;
                             units[i].it->result = rs->inst_idx + rs->offset;
-
                         } else {
                             //jump fail
                             btb.branch_fail(rs->inst_idx);
@@ -125,7 +131,11 @@ public:
                         units[i].it->ready = true;
                         units[i].it->result = units[i].result;
 
-                        printf("set ready for rob, wr: %d, op: %s, rs: %s\n", units[i].it->write_reg, nel::op_name[units[i].it->op], units[i].it->rs->get_name().c_str());
+                        if (regs[reg_idx].status == executing) {
+                            regs[reg_idx].status = nullptr;
+                            rob.update_vregs(reg_idx, units[i].result);
+                        }
+                        //printf("set ready for rob, wr: %d, op: %s, rs: %s, result: %d\n", units[i].it->write_reg, nel::op_name[units[i].it->op], units[i].it->rs->get_name().c_str(), units[i].result);
                     }
 
                 }
@@ -178,8 +188,10 @@ public:
                 executing->waiting_reg = -1;
 
                 //update all waiting rs
+                //std::cout << executing->get_name() << ": waiting rs size: " << executing->waiting_rs.size() << std::endl;
                 for (int j = 0; j < executing->waiting_rs.size(); ++j) {
                     auto rs = executing->waiting_rs[j];
+                    //std::cout << "\t" + rs->get_name() << std::endl;
                     rs->get_result_from(executing, units[i].result);
                 }
                 executing->waiting_rs.clear();

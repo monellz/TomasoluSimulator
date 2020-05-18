@@ -3,6 +3,7 @@
 
 #include <vector>
 #include "branch_history_table.h"
+#include "record.h"
 
 struct BTBLine {
     int inst_idx;

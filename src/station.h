@@ -61,6 +61,7 @@ public:
     ReservationStation* push_at(int i, int inst_idx, int addr, int write_reg, rob_iter it) {
         assert(i >= 0 && i < NUM && !bufs[i].busy);
         bufs[i].busy = true;
+        bufs[i].exec = false;
         bufs[i].addr = addr;
         bufs[i].reg = write_reg;
         bufs[i].inst_idx = inst_idx;
@@ -73,6 +74,7 @@ public:
         for (int i = 0; i < NUM; ++i) {
             if (!bufs[i].busy) {
                 bufs[i].busy = true;
+                bufs[i].exec = false;
                 bufs[i].addr = addr;
                 bufs[i].reg = write_reg;
                 bufs[i].inst_idx = inst_idx;
@@ -88,7 +90,9 @@ public:
         int min_ready = INT32_MAX;
         ReservationStation* target = nullptr;
         for (int i = 0; i < NUM; ++i) {
-            if (bufs[i].busy && !bufs[i].exec && bufs[i].ready != -1 && bufs[i].ready < min_ready) {
+            if (bufs[i].busy && !bufs[i].exec && bufs[i].ready >= 0 && bufs[i].ready < min_ready) {
+                min_ready = bufs[i].ready;
+
                 target = &bufs[i];
                 result = bufs[i].addr;
                 inst_idx = bufs[i].inst_idx;
@@ -130,7 +134,7 @@ public:
 
     void show() {
         printf("OpStations:\n");
-        printf("\t\t\tBusy\tOp  \t\tVj  \t\tVk  \tQj  \tQk  \tInst\n");
+        printf("\t\t\tBusy\tOp  \t\tVj  \t\tVk  \tQj  \tQk  \tReady\tInst\n");
         for (int i = 0; i < NUM; ++i) {
             printf("\t%s:", ops[i].get_name().c_str());
             if (ops[i].busy) printf("\tYes ");
@@ -149,6 +153,8 @@ public:
             if (ops[i].q[1] != nullptr) rs = ops[i].q[1]->get_name();
             printf("\t%4s", rs.c_str());
 
+            printf("\t%5d", ops[i].ready);
+
             printf("\t%4d", ops[i].inst_idx);
             printf("\n");
         }
@@ -164,6 +170,7 @@ public:
     ReservationStation* push_at(int i, nel::op_t op, int inst_idx, int v0, int v1, ReservationStation* q0, ReservationStation* q1, rob_iter it, int offset = 0) {
         assert(i >= 0 && i < NUM && !ops[i].busy);
         ops[i].busy = true;
+        ops[i].exec = false;
         ops[i].op = op;
         ops[i].inst_idx = inst_idx;
         ops[i].v[0] = v0;
@@ -184,6 +191,7 @@ public:
         for (int i = 0; i < NUM; ++i) {
             if (!ops[i].busy) {
                 ops[i].busy = true;
+                ops[i].exec = false;
                 ops[i].op = op;
                 ops[i].inst_idx = inst_idx;
                 ops[i].v[0] = v0;
@@ -208,8 +216,11 @@ public:
         int min_inst_idx = INT32_MAX;
         ReservationStation* target = nullptr;
         for (int i = 0; i < NUM; ++i) {
-            if (ops[i].busy && ops[i].ready != -1 && !ops[i].exec) {
+            if (ops[i].busy && ops[i].ready >= 0 && !ops[i].exec) {
                 if (ops[i].ready < min_ready || (ops[i].ready == min_ready && ops[i].inst_idx < min_inst_idx)) {
+                    min_ready = ops[i].ready;
+                    min_inst_idx = ops[i].inst_idx;
+
                     target = &ops[i];
                     inst_idx = ops[i].inst_idx;
                     it = ops[i].it;

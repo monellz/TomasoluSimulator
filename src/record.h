@@ -1,6 +1,8 @@
 #ifndef __RECORD_H
 #define __RECORD_H
 
+#include <fstream>
+#include <iostream>
 #include <vector>
 #include <sys/time.h>
 #include "nel.h"
@@ -15,14 +17,21 @@ private:
 public:
     std::vector<nel::inst_status_t> inst_status;
     double start, end;
+    int predict;
+    int predict_succ, predict_fail;
     static Record& get_instance() {
         return instance;
     }
 
     void reset(int size) {
         start = end = 0.0;
+        predict = predict_succ = predict_fail = 0;
         inst_status.clear();
         inst_status.resize(size);
+    }
+
+    void show_predict() {
+        printf("Prediction accuracy: %lf(succ: %d, fail: %d)\n", (double)predict_succ / (predict_succ + predict_fail) , predict_succ, predict_fail);
     }
 
     void start_clock() {
@@ -64,6 +73,21 @@ public:
 
     void show_time() {
         printf("Simulation Time: %lf ms\n", end - start);
+    }
+
+    void output(const std::string& log) {
+        std::ofstream out(log);
+        if (!out.is_open()) {
+            std::cout << log << " cannot open" << std::endl;
+            return;
+        }
+
+        for (int i = 0; i < inst_status.size(); ++i) {
+            assert(inst_status[i].done);
+            out << inst_status[i].issue << " " << inst_status[i].exec_comp << " " << inst_status[i].write_result << std::endl;
+        }
+
+        out.close();
     }
 };
 

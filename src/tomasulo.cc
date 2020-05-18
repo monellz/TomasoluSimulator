@@ -43,21 +43,25 @@ void Tomasulo::reset(int inst_num) {
     load_fus.reset();
 
     btb.reset();
-    rob.reset();
+    rob.reset(regs);
 }
 
 void Tomasulo::run_bp(std::vector<nel::inst_t>& insts, int print_cycle) {
     reset(insts.size());
 
-    //TODO: start clock
+    Record::get_instance().start_clock();
+
+    bool predicting = false;
+
     while (true) {
         int cycle = ++CycleCounter::get_instance().counter;
+        //if (cycle % 10000 == 0) std::cout << "cycle : " << cycle << std::endl;
         //write back from functional units
-        add_fus.write_back_bp(regs, btb);
-        mult_fus.write_back_bp(regs, btb);
-        load_fus.write_back_bp(regs, btb);
+        add_fus.write_back_bp(regs, btb, rob);
+        mult_fus.write_back_bp(regs, btb, rob);
+        load_fus.write_back_bp(regs, btb, rob);
 
-        if (!rob.commit(regs)) {
+        if (!rob.commit(regs, predicting, stall)) {
             //reset
             ars.reset();
             mrs.reset();
@@ -69,18 +73,18 @@ void Tomasulo::run_bp(std::vector<nel::inst_t>& insts, int print_cycle) {
 
         int inst_idx = regs[PC].value;
 
-        if (inst_idx < insts.size()) {
+        if (inst_idx < insts.size() && !stall) {
             //try issue
-            
             //check reservation station status
-            std::cout << "current inst_idx: " << inst_idx << std::endl;
             switch (insts[inst_idx].opr) {
                 case nel::Add:
                 case nel::Sub: {
                     ReservationStation* q0 = regs[insts[inst_idx].regs[1]].status;
                     ReservationStation* q1 = regs[insts[inst_idx].regs[2]].status;
-                    int v0 = regs[insts[inst_idx].regs[1]].value;
-                    int v1 = regs[insts[inst_idx].regs[2]].value;
+                    //int v0 = regs[insts[inst_idx].regs[1]].value;
+                    //int v1 = regs[insts[inst_idx].regs[2]].value;
+                    int v0 = rob.get_reg_value(insts[inst_idx].regs[1]);
+                    int v1 = rob.get_reg_value(insts[inst_idx].regs[2]);
                     int write_reg = insts[inst_idx].regs[0];
 
                     int target_idx = ars.available();
@@ -89,6 +93,7 @@ void Tomasulo::run_bp(std::vector<nel::inst_t>& insts, int print_cycle) {
                         rob_iter it = rob.push(insts[inst_idx].opr, write_reg);
                         target = ars.push_at(target_idx, insts[inst_idx].opr, inst_idx, v0, v1, q0, q1, it);
                         it->rs = target;
+                        it->inst_idx = inst_idx;
 
                         //issue succ
                         Record::get_instance().update_issue(inst_idx, cycle);
@@ -111,8 +116,10 @@ void Tomasulo::run_bp(std::vector<nel::inst_t>& insts, int print_cycle) {
                 case nel::Div: {
                     ReservationStation* q0 = regs[insts[inst_idx].regs[1]].status;
                     ReservationStation* q1 = regs[insts[inst_idx].regs[2]].status;
-                    int v0 = regs[insts[inst_idx].regs[1]].value;
-                    int v1 = regs[insts[inst_idx].regs[2]].value;
+                    //int v0 = regs[insts[inst_idx].regs[1]].value;
+                    //int v1 = regs[insts[inst_idx].regs[2]].value;
+                    int v0 = rob.get_reg_value(insts[inst_idx].regs[1]);
+                    int v1 = rob.get_reg_value(insts[inst_idx].regs[2]);
                     int write_reg = insts[inst_idx].regs[0];
 
                     int target_idx = mrs.available();
@@ -121,6 +128,7 @@ void Tomasulo::run_bp(std::vector<nel::inst_t>& insts, int print_cycle) {
                         rob_iter it = rob.push(insts[inst_idx].opr, write_reg);
                         target = mrs.push_at(target_idx, insts[inst_idx].opr, inst_idx, v0, v1, q0, q1, it);
                         it->rs = target;
+                        it->inst_idx = inst_idx;
 
                         //issue succ
                         Record::get_instance().update_issue(inst_idx, cycle);
@@ -149,6 +157,8 @@ void Tomasulo::run_bp(std::vector<nel::inst_t>& insts, int print_cycle) {
                         rob_iter it = rob.push(insts[inst_idx].opr, write_reg);
                         target = load_buffer.push_at(target_idx, inst_idx, addr, write_reg, it);
                         it->rs = target;
+                        it->inst_idx = inst_idx;
+
                         Record::get_instance().update_issue(inst_idx, cycle);
                         target->waiting_reg = write_reg;
                         regs[write_reg].status = target;
@@ -159,9 +169,16 @@ void Tomasulo::run_bp(std::vector<nel::inst_t>& insts, int print_cycle) {
                     break;
                 }
                 case nel::Jump: {
+                    if (predicting) {
+                        stall = true;
+                        break;
+                    }
+
+
                     ReservationStation* q0 = regs[insts[inst_idx].regs[0]].status;
                     ReservationStation* q1 = nullptr;
-                    int v0 = regs[insts[inst_idx].regs[0]].value;
+                    //int v0 = regs[insts[inst_idx].regs[0]].value;
+                    int v0 = rob.get_reg_value(insts[inst_idx].regs[0]);
                     int v1 = insts[inst_idx].ints[0];
                     int write_reg = PC;
                     int offset = insts[inst_idx].ints[1];
@@ -172,8 +189,11 @@ void Tomasulo::run_bp(std::vector<nel::inst_t>& insts, int print_cycle) {
                         rob_iter it = rob.push(insts[inst_idx].opr, write_reg);
                         target = ars.push_at(target_idx, insts[inst_idx].opr, inst_idx, v0, v1, q0, q1, it, offset);
                         it->rs = target;
+                        it->inst_idx = inst_idx;
                         //issue succ
                         Record::get_instance().update_issue(inst_idx, cycle);
+
+                        predicting = true;
 
                         //add it to the waiting queue of rs
                         if (q0 != nullptr) {
@@ -212,17 +232,18 @@ void Tomasulo::run_bp(std::vector<nel::inst_t>& insts, int print_cycle) {
         rob_iter it;
         while ((target = ars.select_task(target_inst_idx, result, left_cycle, it)) != nullptr) {
             if (add_fus.full()) break;
-            bool ret = add_fus.push(target, target_inst_idx, left_cycle, result);
+            bool ret = add_fus.push_bp(target, target_inst_idx, left_cycle, result, it);
             assert(ret);
         }
+
         while ((target = mrs.select_task(target_inst_idx, result, left_cycle, it)) != nullptr) {
             if (mult_fus.full()) break;
-            bool ret = mult_fus.push(target, target_inst_idx, left_cycle, result);
+            bool ret = mult_fus.push_bp(target, target_inst_idx, left_cycle, result, it);
             assert(ret);
         }
         while ((target = load_buffer.select_task(target_inst_idx, result, left_cycle, it)) != nullptr) {
             if (load_fus.full()) break;
-            bool ret = load_fus.push(target, target_inst_idx, left_cycle, result);
+            bool ret = load_fus.push_bp(target, target_inst_idx, left_cycle, result, it);
             assert(ret);
         }
 
@@ -232,7 +253,9 @@ void Tomasulo::run_bp(std::vector<nel::inst_t>& insts, int print_cycle) {
         load_fus.update();
 
         //print 
+#ifndef VERBOSE
         if (print_cycle == cycle) {
+#endif
             printf("---------------log start---cycle: %d--------------\n", cycle);
             ars.show();
             mrs.show();
@@ -244,23 +267,31 @@ void Tomasulo::run_bp(std::vector<nel::inst_t>& insts, int print_cycle) {
             rob.show();
             btb.show();
             printf("---------------log done---------------------------\n");
+#ifndef VERBOSE
         }
+#endif
 
         //check fus
         bool done = add_fus.empty() && mult_fus.empty() && load_fus.empty();
         if (done) break;
-        //sleep(1);
     }
 
+    Record::get_instance().end_clock();
+
+    regs_show();
 
     //instruction status
     Record::get_instance().show_inst_status();
+    Record::get_instance().show_time();
+    Record::get_instance().show_predict();
+    printf("Branch Prediction Total cycle: %d\n", CycleCounter::get_instance().counter);
 }
 
 
 void Tomasulo::run(std::vector<nel::inst_t>& insts, int print_cycle) {
     reset(insts.size());
 
+    Record::get_instance().start_clock();
     while (true) {
         int cycle = ++CycleCounter::get_instance().counter;
 
@@ -274,7 +305,6 @@ void Tomasulo::run(std::vector<nel::inst_t>& insts, int print_cycle) {
 
         if (inst_idx < insts.size() && !stall) {
             //try issue
-            
             //check reservation station status
             switch (insts[inst_idx].opr) {
                 case nel::Add:
@@ -404,7 +434,9 @@ void Tomasulo::run(std::vector<nel::inst_t>& insts, int print_cycle) {
         load_fus.update();
 
         //print 
-        //if (print_cycle == cycle) {
+#ifndef VERBOSE
+        if (print_cycle == cycle) {
+#endif
             printf("---------------log start---cycle: %d--------------\n", cycle);
             ars.show();
             mrs.show();
@@ -414,14 +446,20 @@ void Tomasulo::run(std::vector<nel::inst_t>& insts, int print_cycle) {
             mult_fus.show();
             load_fus.show();
             printf("---------------log done---------------------------\n");
-        //}
-
+#ifndef VERBOSE
+        }
+#endif
         //check fus
         bool done = add_fus.empty() && mult_fus.empty() && load_fus.empty();
         if (done) break;
     }
 
+    Record::get_instance().end_clock();
+
+    regs_show();
 
     //instruction status
     Record::get_instance().show_inst_status();
+    Record::get_instance().show_time();
+    printf("Non Branch Prediction Total cycle: %d\n", CycleCounter::get_instance().counter);
 }

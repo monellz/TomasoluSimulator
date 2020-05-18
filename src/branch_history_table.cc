@@ -9,6 +9,7 @@ void BHT::reset() {
 }
 
 void BHT::succ() {
+    //if (table == 0) table = 1;
     switch (table) {
         case 1:
         case 2:
@@ -19,6 +20,7 @@ void BHT::succ() {
 }
 
 void BHT::fail() {
+    //if (table == 1) table = 0;
     switch (table) {
         case 0:
         case 1:
@@ -26,10 +28,14 @@ void BHT::fail() {
         case 3: table = 1; break;
         default: printf("BHT fail() error table: %d\n", table); break;
     }
-
 }
 
 int BHT::predict() {
+    /*
+    if (table == 0) return -1;
+    else return addr;
+    */
+
     if (((table >> 1) & 0x1) == 1) {
         //jump
         return addr;
