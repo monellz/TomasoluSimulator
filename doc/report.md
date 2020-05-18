@@ -201,7 +201,7 @@ Tomasolu算法与记分牌十分相似，其区别主要在于Tomasolu算法通�
     ADD R0,R3,R4 //DIV与ADD有WAW冲突
     ```
 
-    对于记分牌算法，注意到ADD指令是没有依赖的，可以直接发射执行，前面的MUL正在执行，而DIV正在等带R1操作数的结果，当ADD指令执行完毕后，由于其结果需要写入R0，但倘若现在就写入，等到之后DIV结束后，会往R0写入DIV的结果值，那整个指令最终的R0的值就是DIV的结果而不是ADD的结果，因此记分牌算法采用停顿等待的方法，ADD指令会等到DIV指令执行，写入之后才会向R0写入自己的结果
+    对于记分牌算法，当ADD准备发射时，由于ADD与DIV的WAW冲突，ADD不会发射，而是等到WAW冲突解决完毕后才会发射，这里会有一段流水线暂停等待的时间
 
     而对于Tomasolu算法，当DIV发射之后，R0对应的Register Result Status会被设置成DIV所在的Reservation Station，意味着这个寄存器有个”重命名“ Reservation Station，之后所有需要得到该寄存器值的指令都应该去找这个Reservation Station，然后现在ADD发射，它会更新R0对应的Register Result Status为ADD对应的Reservation Station，当DIV结束执行时，R0就已经没有在等待它的结果了，它的结果不会被写入R0(只会被写入在DIV到ADD中间指令需要R0的地方)，由此更早执行完的ADD指令是可以直接写入R0(此时R0的Register Result Status为ADD这个Reservation Station，等待它的结果)，最终整个指令结束后R0的值就是ADD的结果，保证了正确性，同时Tomasolu算法也没有进行等待 
 
