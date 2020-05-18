@@ -51,8 +51,6 @@ void Tomasulo::run_bp(std::vector<nel::inst_t>& insts, int print_cycle) {
 
     Record::get_instance().start_clock();
 
-    bool predicting = false;
-
     while (true) {
         int cycle = ++CycleCounter::get_instance().counter;
         //if (cycle % 10000 == 0) std::cout << "cycle : " << cycle << std::endl;
@@ -61,7 +59,7 @@ void Tomasulo::run_bp(std::vector<nel::inst_t>& insts, int print_cycle) {
         mult_fus.write_back_bp(regs, btb, rob);
         load_fus.write_back_bp(regs, btb, rob);
 
-        if (!rob.commit(regs, predicting, stall)) {
+        if (!rob.commit(regs)) {
             //reset
             ars.reset();
             mrs.reset();
@@ -169,12 +167,6 @@ void Tomasulo::run_bp(std::vector<nel::inst_t>& insts, int print_cycle) {
                     break;
                 }
                 case nel::Jump: {
-                    if (predicting) {
-                        stall = true;
-                        break;
-                    }
-
-
                     ReservationStation* q0 = regs[insts[inst_idx].regs[0]].status;
                     ReservationStation* q1 = nullptr;
                     //int v0 = regs[insts[inst_idx].regs[0]].value;
@@ -192,8 +184,6 @@ void Tomasulo::run_bp(std::vector<nel::inst_t>& insts, int print_cycle) {
                         it->inst_idx = inst_idx;
                         //issue succ
                         Record::get_instance().update_issue(inst_idx, cycle);
-
-                        predicting = true;
 
                         //add it to the waiting queue of rs
                         if (q0 != nullptr) {

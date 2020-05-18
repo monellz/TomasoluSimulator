@@ -32,7 +32,7 @@ public:
     int vregs[REG_NUM];
 
     //true: do noting, false: need reset all(due to jump fail)
-    bool commit(reg_t regs[], bool& predicting, bool& stall);
+    bool commit(reg_t regs[]);
     void show();
     int get_reg_value(int reg_idx);
     void update_vregs(int reg_idx, int value);

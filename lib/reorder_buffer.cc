@@ -65,7 +65,7 @@ void ROB::update_vregs(int reg_idx, int value) {
     vregs[reg_idx] = value;
 }
 
-bool ROB::commit(reg_t regs[], bool& predicting, bool& stall) {
+bool ROB::commit(reg_t regs[]) {
     while (buf.size() > 0) {
         rob_iter it = buf.begin();
 
@@ -100,8 +100,6 @@ bool ROB::commit(reg_t regs[], bool& predicting, bool& stall) {
                     break;
                 }
                 case nel::Jump: {
-                    predicting = false;
-                    stall = false;
                     if (result != predict_result) {
                         //prediction fail
                         Record::get_instance().predict_fail++;
