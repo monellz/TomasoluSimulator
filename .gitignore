@@ -2,4 +2,5 @@
 *.txt
 *.log
 .vscode
-simulator
+tmsl
+tmsl_bp

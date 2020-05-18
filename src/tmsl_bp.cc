@@ -9,8 +9,8 @@ int main(int argc, char** argv) {
     std::vector<nel::inst_t> insts;
 
     if (argc != 3 && argc != 4) {
-        printf("Usage: ./simulator <#file_name> <#output_fname> <#print_cycle>\n");
-        printf("       ./simulator <#file_name> <#output_fname>\n");
+        printf("Usage: ./tmsl_bp <#file_name> <#output_fname> <#print_cycle>\n");
+        printf("       ./tmsl_bp <#file_name> <#output_fname>\n");
         return -1;
     }
 
@@ -18,12 +18,9 @@ int main(int argc, char** argv) {
     if (argc == 4)  print_cycle = atoi(argv[3]);
 
     parser.parse(argv[1], insts);
-    printf("parse done, insts.len = %lu\n", insts.size());
 
-    Tomasulo tmsl, tmsl_bp;
-    //tmsl.run(insts, print_cycle);
+    Tomasulo tmsl_bp;
     tmsl_bp.run_bp(insts, print_cycle);
-
     //Record::get_instance().output(argv[2]);
 
     return 0;

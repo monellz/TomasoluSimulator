@@ -1,21 +1,24 @@
-SRC_DIR=./src
+SRC_DIR=src
+LIB_DIR=lib
+LIB=$(wildcard $(LIB_DIR)/*.cc)
+LIB_OBJ=$(LIB:.cc=.o)
 SRC=$(wildcard $(SRC_DIR)/*.cc)
-HEADERS=$(wildcard $(SRC_DIR)/.h)
-OBJ=$(SRC:.cc=.o)
+SRC_OBJ=$(SRC:.cc=.o)
 #MACRO=-DVERBOSE
 CXX_FLAGS=-std=c++14 -O3 ${MACRO}
 
-all: simulator
+TMSL=${SRC_DIR}/tmsl.cc
+TMSL_BP=${SRC_DIR}/tmsl.cc
 
-simulator: ${OBJ} ${HEADERS}
-	g++ $^ -o $@ ${CXX_FLAGS}
-%.o: %.cc ${HEADERS}
-	g++ -c $^ -o $@ ${CXX_FLAGS}
+all: tmsl tmsl_bp 
 
-
-run: simulator
-	./simulator
+tmsl: ${SRC_DIR}/tmsl.o ${LIB_OBJ}
+	g++ $^ -o $@ ${CXX_FLAGS} -I${LIB_DIR}
+tmsl_bp: ${SRC_DIR}/tmsl_bp.o ${LIB_OBJ}
+	g++ $^ -o $@ ${CXX_FLAGS} -I${LIB_DIR}
+%.o: %.cc
+	g++ -c $^ -o $@ ${CXX_FLAGS} -I${LIB_DIR}
 
 clean:
-	rm -rf ${OBJ}
-	rm simulator
+	rm -rf ${LIB_OBJ} ${SRC_OBJ}
+	rm tmsl tmsl_bp
