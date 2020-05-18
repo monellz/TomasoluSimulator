@@ -22,6 +22,6 @@ int main(int argc, char** argv) {
     Tomasulo tmsl;
     tmsl.run(insts, print_cycle);
 
-    //Record::get_instance().output(argv[2]);
+    Record::get_instance().output(argv[2]);
     return 0;
 }

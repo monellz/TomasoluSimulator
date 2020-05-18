@@ -1,6 +1,5 @@
 *.o
 *.txt
-*.log
 .vscode
 tmsl
 tmsl_bp
