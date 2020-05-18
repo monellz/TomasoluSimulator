@@ -7,14 +7,13 @@ SRC_OBJ=$(SRC:.cc=.o)
 #MACRO=-DVERBOSE
 CXX_FLAGS=-std=c++14 -O3 ${MACRO}
 
-TMSL=${SRC_DIR}/tmsl.cc
-TMSL_BP=${SRC_DIR}/tmsl.cc
-
-all: tmsl tmsl_bp 
+all: tmsl tmsl_bp non_pipeline
 
 tmsl: ${SRC_DIR}/tmsl.o ${LIB_OBJ}
 	g++ $^ -o $@ ${CXX_FLAGS} -I${LIB_DIR}
 tmsl_bp: ${SRC_DIR}/tmsl_bp.o ${LIB_OBJ}
+	g++ $^ -o $@ ${CXX_FLAGS} -I${LIB_DIR}
+non_pipeline: ${SRC_DIR}/non_pipeline.o ${LIB_OBJ}
 	g++ $^ -o $@ ${CXX_FLAGS} -I${LIB_DIR}
 %.o: %.cc
 	g++ -c $^ -o $@ ${CXX_FLAGS} -I${LIB_DIR}
